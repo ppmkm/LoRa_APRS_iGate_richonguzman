@@ -151,6 +151,7 @@ namespace Utils {
                 !Config.wxsensor.active && 
                 (Config.battery.sendInternalVoltage || Config.battery.sendExternalVoltage) &&
                 (lastBeaconTx > 0)) {
+                Utils::println("-- Sending EquationUnits --");
                 TELEMETRY_Utils::sendEquationsUnitsParameters();
             }
 
@@ -243,6 +244,7 @@ namespace Utils {
             #endif
 
             if (Config.battery.sendVoltageAsTelemetry && !Config.wxsensor.active && (Config.battery.sendInternalVoltage || Config.battery.sendExternalVoltage)){
+                Utils::println("-- Generating telemetry --");
                 String encodedTelemetry = TELEMETRY_Utils::generateEncodedTelemetry();
                 beaconPacket += encodedTelemetry;
                 secondaryBeaconPacket += encodedTelemetry;
