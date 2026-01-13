@@ -116,6 +116,8 @@ bool Configuration::writeFile() {
         data["battery"]["useExternalI2CSensor"]     = battery.useExternalI2CSensor;
         data["battery"]["voltageDividerR1"]         = battery.voltageDividerR1;
         data["battery"]["voltageDividerR2"]         = battery.voltageDividerR2;
+        data["battery"]["internalVoltageDividerR1"] = battery.internalVoltageDividerR1;
+        data["battery"]["internalVoltageDividerR2"] = battery.internalVoltageDividerR2;
         data["battery"]["externalVoltagePin"]       = battery.externalVoltagePin;
 
         data["battery"]["sendVoltageAsTelemetry"]   = battery.sendVoltageAsTelemetry;
@@ -307,6 +309,8 @@ bool Configuration::readFile() {
             !data["battery"].containsKey("useExternalI2CSensor") ||
             !data["battery"].containsKey("voltageDividerR1") ||
             !data["battery"].containsKey("voltageDividerR2") ||
+            !data["battery"].containsKey("internalVoltageDividerR1") ||
+            !data["battery"].containsKey("internalVoltageDividerR2") ||
             !data["battery"].containsKey("externalVoltagePin") ||
             !data["battery"].containsKey("sendVoltageAsTelemetry")) needsRewrite = true;
         battery.sendInternalVoltage     = data["battery"]["sendInternalVoltage"] | false;
@@ -318,6 +322,8 @@ bool Configuration::readFile() {
         battery.useExternalI2CSensor    = data["battery"]["useExternalI2CSensor"] | false;
         battery.voltageDividerR1        = data["battery"]["voltageDividerR1"] | 100.0;
         battery.voltageDividerR2        = data["battery"]["voltageDividerR2"] | 27.0;
+        battery.internalVoltageDividerR1 = data["battery"]["internalVoltageDividerR1"] | 100.0;
+        battery.internalVoltageDividerR2 = data["battery"]["internalVoltageDividerR2"] | 100.0;
         battery.externalVoltagePin      = data["battery"]["externalVoltagePin"] | 34;
         battery.sendVoltageAsTelemetry  = data["battery"]["sendVoltageAsTelemetry"] | false;
 
@@ -491,6 +497,8 @@ void Configuration::setDefaultValues() {
     battery.useExternalI2CSensor    = false;
     battery.voltageDividerR1        = 100.0;
     battery.voltageDividerR2        = 27.0;
+    battery.internalVoltageDividerR1 = 100.0;
+    battery.internalVoltageDividerR2 = 100.0;
     battery.externalVoltagePin      = 34;
 
     battery.sendVoltageAsTelemetry  = false;
