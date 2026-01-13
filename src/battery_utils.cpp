@@ -37,6 +37,10 @@ float   multiplyCorrection              = 0.035;
 
 float   voltageDividerTransformation    = 0.0;
 
+// Voltage divider resistances for internal battery voltage measurement
+float   internalVoltageDividerR1        = 100000.0;  // 100k ohms (high side)
+float   internalVoltageDividerR2        = 100000.0;  // 100k ohms (low side)
+
 uint8_t externalI2CSensorAddress        = 0x00;
 int     externalI2CSensorType           = 0; // 0 = None | 1 = INA219
 
@@ -193,18 +197,18 @@ namespace BATTERY_Utils {
                 #ifdef HAS_ADC_CALIBRATION
                     if (calibrationEnable){
                         float voltage = esp_adc_cal_raw_to_voltage(sampleSum / adcReadings, &adc_chars);
-                        voltage *= 2;       // for 100K/100K voltage divider
+                        voltage *= (internalVoltageDividerR1 + internalVoltageDividerR2) / internalVoltageDividerR2;  // voltage divider calculation
                         voltage /= 1000;
                         return voltage;
                     } else {
-                        return (2 * (sampleSum/adcReadings) * adcReadingTransformation) + voltageDividerCorrection;  // raw voltage without mapping
+                        return (((internalVoltageDividerR1 + internalVoltageDividerR2) / internalVoltageDividerR2) * (sampleSum/adcReadings) * adcReadingTransformation) + voltageDividerCorrection;  // raw voltage without mapping
                     }
                 #else
                     #ifdef LIGHTGATEWAY_PLUS_1_0
                         double inputDivider = (1.0 / (560.0 + 100.0)) * 100.0;  // The voltage divider is a 560k + 100k resistor in series, 100k on the low side.
                         return (((sampleSum/adcReadings) * adcReadingTransformation) / inputDivider) + 0.41;
                     #else
-                        return (2 * (sampleSum/adcReadings) * adcReadingTransformation) + voltageDividerCorrection;  // raw voltage without mapping
+                        return (((internalVoltageDividerR1 + internalVoltageDividerR2) / internalVoltageDividerR2) * (sampleSum/adcReadings) * adcReadingTransformation) + voltageDividerCorrection;  // raw voltage without mapping
                     #endif
                 #endif
             #endif
