@@ -172,6 +172,8 @@ function loadSettings(settings) {
     document.getElementById("battery.externalVoltagePin").value         = settings.battery.externalVoltagePin;
     document.getElementById("battery.voltageDividerR1").value           = settings.battery.voltageDividerR1.toFixed(1);
     document.getElementById("battery.voltageDividerR2").value           = settings.battery.voltageDividerR2.toFixed(1);
+    document.getElementById("battery.internalVoltageDividerR1").value   = settings.battery.internalVoltageDividerR1.toFixed(1);
+    document.getElementById("battery.internalVoltageDividerR2").value   = settings.battery.internalVoltageDividerR2.toFixed(1);
     SendExternalVoltageCheckbox.checked     = settings.battery.sendExternalVoltage;
     UseExternalI2CSensorCheckbox.disabled   = !SendExternalVoltageCheckbox.checked;
     ExternalVoltagePin.disabled             = !SendExternalVoltageCheckbox.checked || UseExternalI2CSensorCheckbox.checked;

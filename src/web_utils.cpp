@@ -236,6 +236,8 @@ namespace WEB_Utils {
             Config.battery.voltageDividerR1         = getParamFloatSafe("battery.voltageDividerR1", Config.battery.voltageDividerR1);
             Config.battery.voltageDividerR2         = getParamFloatSafe("battery.voltageDividerR2", Config.battery.voltageDividerR2);
         }
+        Config.battery.internalVoltageDividerR1     = getParamFloatSafe("battery.internalVoltageDividerR1", Config.battery.internalVoltageDividerR1);
+        Config.battery.internalVoltageDividerR2     = getParamFloatSafe("battery.internalVoltageDividerR2", Config.battery.internalVoltageDividerR2);
         Config.battery.monitorExternalVoltage       = request->hasParam("battery.monitorExternalVoltage", true);
         if (Config.battery.monitorExternalVoltage) {
             Config.battery.externalSleepVoltage     = getParamFloatSafe("battery.externalSleepVoltage", Config.battery.externalSleepVoltage);
