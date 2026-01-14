@@ -132,6 +132,10 @@ namespace BATTERY_Utils {
 
     void setup() {
         if ((Config.battery.sendExternalVoltage || Config.battery.monitorExternalVoltage) && Config.battery.voltageDividerR2 != 0) voltageDividerTransformation = (Config.battery.voltageDividerR1 + Config.battery.voltageDividerR2) / Config.battery.voltageDividerR2;
+        if (Config.battery.internalVoltageDividerR1 && Config.battery.internalVoltageDividerR2 != 0){
+        	internalVoltageDividerR1 = Config.battery.internalVoltageDividerR1;
+        	internalVoltageDividerR2 = Config.battery.internalVoltageDividerR2;
+        }
 
         #if defined(HAS_ADC_CALIBRATION)
             if (Config.battery.sendInternalVoltage || Config.battery.monitorInternalVoltage || Config.battery.sendExternalVoltage || Config.battery.monitorExternalVoltage) {
@@ -199,6 +203,7 @@ namespace BATTERY_Utils {
                         float voltage = esp_adc_cal_raw_to_voltage(sampleSum / adcReadings, &adc_chars);
                         voltage *= (internalVoltageDividerR1 + internalVoltageDividerR2) / internalVoltageDividerR2;  // voltage divider calculation
                         voltage /= 1000;
+                        Serial.printf("Calibrated internal voltage: %.3f V\n", voltage);
                         return voltage;
                     } else {
                         return (((internalVoltageDividerR1 + internalVoltageDividerR2) / internalVoltageDividerR2) * (sampleSum/adcReadings) * adcReadingTransformation) + voltageDividerCorrection;  // raw voltage without mapping

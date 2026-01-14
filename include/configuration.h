@@ -103,6 +103,8 @@ public:
     bool    monitorExternalVoltage;
     float   externalSleepVoltage;
     bool    useExternalI2CSensor;
+    float   internalVoltageDividerR1;
+    float   internalVoltageDividerR2;
     float   voltageDividerR1;
     float   voltageDividerR2;
     bool    sendVoltageAsTelemetry;
@@ -167,6 +169,13 @@ public:
     bool    beaconOverMqtt;
 };
 
+class WUNDERGROUND {
+public:
+	bool    active;
+	String  apiKey;
+	String  stationId;
+};
+
 class Configuration {
 public:
     String                  callsign;
@@ -193,6 +202,7 @@ public:
     NTP                     ntp;    
     REMOTE_MANAGEMENT       remoteManagement;
     MQTT                    mqtt;
+    WUNDERGROUND           wunderground;
 
     void setDefaultValues();
     bool writeFile();

@@ -164,6 +164,10 @@ bool Configuration::writeFile() {
 
         data["other"]["backupDigiMode"]             = backupDigiMode;
 
+        data["wunderground"]["active"] = wunderground.active;
+        data["wunderground"]["apiKey"] = wunderground.apiKey;
+        data["wunderground"]["stationId"] = wunderground.stationId;
+
         serializeJson(data, configFile);
         configFile.close();
         return true;
@@ -333,6 +337,15 @@ bool Configuration::readFile() {
         wxsensor.active                 = data["wxsensor"]["active"] | false;
         wxsensor.heightCorrection       = data["wxsensor"]["heightCorrection"] | 0;
         wxsensor.temperatureCorrection  = data["wxsensor"]["temperatureCorrection"] | 0.0;
+
+
+        if (!data["wunderground"].containsKey("active") ||
+              !data["wunderground"].containsKey("apiKey") ||
+              !data["wunderground"].containsKey("stationId")) needsRewrite = true;
+
+        wunderground.active             = data["wunderground"]["active"] | false;
+        wunderground.apiKey             = data["wunderground"]["apiKey"] | "WUNDERGROUND_API_KEY";
+        wunderground.stationId          = data["wunderground"]["stationId"] | "WUNDERGROUND_STATION_ID";
 
         if (!data["syslog"].containsKey("active") ||
             !data["syslog"].containsKey("server") ||
@@ -544,6 +557,10 @@ void Configuration::setDefaultValues() {
     rememberStationTime             = 30;
 
     backupDigiMode                  = false;
+
+    wunderground.active             = false;
+    wunderground.apiKey             = "";
+    wunderground.stationId          = "";
 
     Serial.println("New Data Created... All is Written!");
 }

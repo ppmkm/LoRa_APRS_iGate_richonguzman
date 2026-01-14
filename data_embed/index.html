@@ -3,7 +3,7 @@
     <head>
         <meta charset="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <title>LoRa iGate & Digi software &minus; Ricardo Guzman CA2RXU</title>
+        <title>LoRa iGate & Digi software - Ricardo Guzman CA2RXU</title>
         <link rel="stylesheet" href="/bootstrap.css" />
         <link rel="stylesheet" href="/style.css" />
         <link rel="icon" href="/favicon.png" type="image/x-icon">
@@ -732,7 +732,7 @@
                                             id="digi.ecoMode"
                                         >
                                             <option value="0" selected>OFF (Normal Mode - WiFiAP and Serial Output enabled)</option>
-                                            <option value="1">Ultra Eco Mode (Sleep till Packet Rx (WiFiAP/WebUI & Display disabled))</option>
+                                            <option value="1">Ultra Eco Mode (Sleep till Packet Rx (WiFiAP/WebUI &amp; Display disabled))</option>
                                             <option value="2">OFF (Normal Mode - WiFiAP disabled but Serial Output still enabled)</option>
                                         </select>
                                     </div>
@@ -1109,7 +1109,7 @@
                                     Battery
                                 </h5>
                                 <small>
-                                    Battery Monitor & Health
+                                    Battery Monitor &amp; Health
                                     <br>
                                     <br>
                                     Max Voltage on input pin is 3.3V.
@@ -1181,6 +1181,38 @@
                                                 >
                                             </div>
                                         </div>
+                                        <div class="col">
+                                            <label for="battery.internalVoltageDividerR1" class="form-label">Internal Voltage divider R1</label>
+                                            <div class="input-group">
+                                                <input 
+                                                    type="number"
+                                                    name="battery.internalVoltageDividerR1"
+                                                    id="battery.internalVoltageDividerR1"
+                                                    placeholder="100.0"
+                                                    class="form-control"
+                                                    step="0.1"
+                                                    min="1"
+                                                    max="1000"
+                                                />
+                                                <span class="input-group-text">kOhm</span>
+                                            </div>
+                                        </div>
+                                        <div class="col">
+                                            <label for="battery.internalVoltageDividerR2" class="form-label">Internal Voltage divider R2</label>
+                                            <div class="input-group">
+                                                <input
+                                                    type="number"
+                                                    name="battery.internalVoltageDividerR2"
+                                                    id="battery.internalVoltageDividerR2"
+                                                    placeholder="100.0"
+                                                    class="form-control"
+                                                    step="0.1"
+                                                    min="1"
+                                                    max="1000"
+                                                />
+                                                <span class="input-group-text">kOhm</span>
+                                            </div>
+                                        </div>                                        
                                     </div>
                                     <div class="col-6">
                                         <div class="form-check form-switch">
@@ -1288,38 +1320,7 @@
                                                 <span class="input-group-text">kOhm</span>
                                             </div>
                                         </div>
-                                        <div class="col">
-                                            <label for="battery.internalVoltageDividerR1" class="form-label">Internal Voltage divider R1</label>
-                                            <div class="input-group">
-                                                <input 
-                                                    type="number"
-                                                    name="battery.internalVoltageDividerR1"
-                                                    id="battery.internalVoltageDividerR1"
-                                                    placeholder="100.0"
-                                                    class="form-control"
-                                                    step="0.1"
-                                                    min="1"
-                                                    max="1000"
-                                                />
-                                                <span class="input-group-text">kOhm</span>
-                                            </div>
-                                        </div>
-                                        <div class="col">
-                                            <label for="battery.internalVoltageDividerR2" class="form-label">Internal Voltage divider R2</label>
-                                            <div class="input-group">
-                                                <input
-                                                    type="number"
-                                                    name="battery.internalVoltageDividerR2"
-                                                    id="battery.internalVoltageDividerR2"
-                                                    placeholder="100.0"
-                                                    class="form-control"
-                                                    step="0.1"
-                                                    min="1"
-                                                    max="1000"
-                                                />
-                                                <span class="input-group-text">kOhm</span>
-                                            </div>
-                                        </div>
+
                                     </div>
                                 </div>
                             </div>
@@ -2238,7 +2239,7 @@
                                 target="_blank"
                                 >SQ2CPA</a
                             >
-                            &
+                            &amp;
                             <a
                                 href="https://cd3eap.aguayoki.cl/"
                                 target="_blank"
