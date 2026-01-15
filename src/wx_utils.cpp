@@ -1,4 +1,4 @@
-/* Copyright (C) 2025 Ricardo Guzman - CA2RXU
+ /* Copyright (C) 2025 Ricardo Guzman - CA2RXU
  * 
  * This file is part of LoRa APRS iGate.
  * 
@@ -17,6 +17,9 @@
  */
 
 #include <TinyGPS++.h>
+#include <WiFi.h>
+#include <HTTPClient.h>
+#include <ArduinoJson.h>
 #ifdef LIGHTGATEWAY_PLUS_1_0
 #include "Adafruit_SHTC3.h"
 #endif
@@ -170,13 +173,119 @@ namespace WX_Utils {
                                 bme680.setHumidityOversampling(BME680_OS_1X);
                                 bme680.setPressureOversampling(BME680_OS_1X);
                                 bme680.setIIRFilterSize(BME680_FILTER_SIZE_0);
-                                Serial.println("BMP680 Module init done!");
+                                Serial.println("BME680 Module init done!");
                             #endif
                             break;
                     }
                 }
             }
         }
+    }
+
+    // -----------------------------------------------------------------------
+    // New helper: fetch weather data from Weather Underground if enabled
+    // -----------------------------------------------------------------------
+    struct WX_WundergroundData {
+        float temperature;      // °C
+        float humidity;         // % (00 = 100%)
+        float pressure;         // hPa (tenths of millibars)
+        float winddir;          // degrees
+        float windspeed;        // m/s (sustained one-minute wind speed)
+        float windgust;         // m/s (peak wind speed in last 5 minutes)
+        float rainLastHour;     // mm (rainfall in the last hour)
+        float rainLast24Hours;  // mm (rainfall in the last 24 hours)
+        float rainSinceMidnight;// mm (rainfall since midnight)
+        float luminosity;       // W/m² (watts per square meter)
+        float snowfall;         // mm (snowfall in the last 24 hours)
+        int   rawRainCounter;   // raw rain counter value
+    };
+
+    WX_WundergroundData getWundergroundData() {
+        WX_WundergroundData data;
+        data.temperature       = NAN;
+        data.humidity          = NAN;
+        data.pressure          = NAN;
+        data.winddir           = NAN;
+        data.windspeed         = NAN;
+        data.windgust          = NAN;
+        data.rainLastHour      = NAN;
+        data.rainLast24Hours   = NAN;
+        data.rainSinceMidnight = NAN;
+        data.luminosity        = NAN;
+        data.snowfall          = NAN;
+        data.rawRainCounter    = -1;
+
+        if (!Config.wunderground.active) {
+            return data;
+        }
+
+        if (WiFi.status() != WL_CONNECTED) {
+            return data;
+        }
+
+        // Build the request URL
+        String url = "https://api.weather.com/v2/pws/observations/current?format=json&units=m";
+        url += "&stationId=" + Config.wunderground.stationId;
+        url += "&apiKey=" + Config.wunderground.apiKey;
+
+        HTTPClient http;
+        http.setTimeout(5000);
+        http.begin(url);
+
+        int httpCode = http.GET();
+        if (httpCode == HTTP_CODE_OK) {
+            String payload = http.getString();
+            // Use ArduinoJson to parse the JSON response
+            DynamicJsonDocument doc(2048);
+            DeserializationError err = deserializeJson(doc, payload);
+            if (!err) {
+                // Data is nested under observations[0]
+                JsonObject obs = doc["observations"][0];
+                if (!obs.isNull()) {
+                    // Top-level fields
+                    if (obs.containsKey("humidity")) {
+                        data.humidity = obs["humidity"];
+                    }
+                    if (obs.containsKey("winddir")) {
+                        data.winddir = obs["winddir"];
+                    }
+                    if (obs.containsKey("solarRadiation")) {
+                        data.luminosity = obs["solarRadiation"];
+                    }
+
+                    // Metric-nested fields (when using units=m)
+                    JsonObject metric = obs["metric"];
+                    if (!metric.isNull()) {
+                        if (metric.containsKey("temp")) {
+                            data.temperature = metric["temp"];
+                        }
+                        if (metric.containsKey("pressure")) {
+                            data.pressure = metric["pressure"];
+                        }
+                        if (metric.containsKey("windSpeed")) {
+                            // API returns km/h, convert to m/s
+                            data.windspeed = metric["windSpeed"].as<float>() / 3.6;
+                        }
+                        if (metric.containsKey("windGust")) {
+                            // API returns km/h, convert to m/s
+                            data.windgust = metric["windGust"].as<float>() / 3.6;
+                        }
+                        if (metric.containsKey("precipRate")) {
+                            // mm/hr - use as proxy for last hour rain
+                            data.rainLastHour = metric["precipRate"];
+                        }
+                        if (metric.containsKey("precipTotal")) {
+                            // mm since midnight
+                            data.rainSinceMidnight = metric["precipTotal"];
+                        }
+                    }
+                }
+            }
+        } else {
+            Serial.printf("Wunderground HTTP error: %d\n", httpCode);
+        }
+        http.end();
+        return data;
     }
 
     String generateTempString(const float sensorTemp) {
@@ -230,6 +339,57 @@ namespace WX_Utils {
         }
     }
 
+    // Wind direction: 3 digits (000-360 degrees)
+    String generateWindDirString(const float windDir) {
+        if (isnan(windDir)) return "...";
+        int dir = (int)windDir % 360;
+        if (dir < 10) return "00" + String(dir);
+        if (dir < 100) return "0" + String(dir);
+        return String(dir);
+    }
+
+    // Wind speed/gust: 3 digits in mph (input is m/s)
+    String generateWindSpeedString(const float speedMs) {
+        if (isnan(speedMs)) return "...";
+        int mph = (int)(speedMs * 2.23694);  // m/s to mph
+        if (mph < 0) return "...";
+        if (mph < 10) return "00" + String(mph);
+        if (mph < 100) return "0" + String(mph);
+        if (mph < 1000) return String(mph);
+        return "...";
+    }
+
+    // Rain: 3 digits in hundredths of inch (input is mm)
+    String generateRainString(const float rainMm) {
+        if (isnan(rainMm)) return "...";
+        int hundredthsInch = (int)(rainMm * 3.937);  // mm to hundredths of inch
+        if (hundredthsInch < 0) return "...";
+        if (hundredthsInch < 10) return "00" + String(hundredthsInch);
+        if (hundredthsInch < 100) return "0" + String(hundredthsInch);
+        if (hundredthsInch < 1000) return String(hundredthsInch);
+        return "999";  // cap at 999
+    }
+
+    // Luminosity: L for <=999, l for >=1000 W/m²
+    String generateLuminosityString(const float lux) {
+        if (isnan(lux)) return "";
+        int val = (int)lux;
+        if (val < 0) return "";
+        if (val < 1000) {
+            // Use 'L' prefix for values 0-999
+            if (val < 10) return "L00" + String(val);
+            if (val < 100) return "L0" + String(val);
+            return "L" + String(val);
+        } else {
+            // Use 'l' prefix for values >= 1000, report value - 1000
+            val = val - 1000;
+            if (val > 999) val = 999;  // cap at 1999 W/m²
+            if (val < 10) return "l00" + String(val);
+            if (val < 100) return "l0" + String(val);
+            return "l" + String(val);
+        }
+    }
+
     float getAltitudeCorrection() {
         #ifdef HAS_GPS
             return Config.beacon.gpsActive ? gps.altitude.meters() : Config.wxsensor.heightCorrection;
@@ -239,99 +399,148 @@ namespace WX_Utils {
     }
 
     String readDataSensor() {
-        switch (wxModuleType) {
-            case 1: // BME280
-                bme280.takeForcedMeasurement();
-                newTemp     = bme280.readTemperature();
-                newPress    = (bme280.readPressure() / 100.0F);
-                newHum      = bme280.readHumidity();
-                break;
-            case 2: // BMP280
-                bmp280.takeForcedMeasurement();
-                newTemp     = bmp280.readTemperature();
-                newPress    = (bmp280.readPressure() / 100.0F);
-                newHum      = 0;
-                break;
-            case 3: // BME680
-                #if !defined(HELTEC_V3) && !defined(HELTEC_V3_2)
-                    bme680.performReading();
-                    delay(50);
-                    if (bme680.endReading()) {
-                        newTemp     = bme680.temperature;
-                        newPress    = (bme680.pressure / 100.0F);
-                        newHum      = bme680.humidity;
-                        newGas      = bme680.gas_resistance / 1000.0; // in Kilo ohms
-                    }
-                #endif
-                break;
-            case 4: // Si7021
-                newTemp     = si7021.readTemperature();
-                newHum      = si7021.readHumidity();
-                newPress    = 0;
-                break;
-            case 5: // SHTC3
-                {
-                    #ifdef LIGHTGATEWAY_PLUS_1_0
-                        sensors_event_t humidity, temp;
-                        shtc3.getEvent(&humidity, &temp);
-                        newTemp     = temp.temperature;
-                        newHum      = humidity.relative_humidity;
-                        newPress    = 0;
-                    #endif
-                }
-                break;
-            case 6: // BMP280 + AHT20
-                {
+        // ---------------------------------------------------------------
+        // 1) Try to fetch data from Weather Underground (highest priority)
+        // ---------------------------------------------------------------
+        WX_WundergroundData wxData = getWundergroundData();
+        bool usingWunderground = false;
+
+        // If we got valid data from Wunderground, use it directly
+        if (!isnan(wxData.temperature) && !isnan(wxData.humidity) && !isnan(wxData.pressure)) {
+            newTemp    = wxData.temperature;
+            newHum     = wxData.humidity;
+            newPress   = wxData.pressure;
+            usingWunderground = true;
+        } else {
+            // ---------------------------------------------------------------
+            // 2) Fallback to local sensor(s) – existing logic
+            // ---------------------------------------------------------------
+            switch (wxModuleType) {
+                case 1: // BME280
+                    bme280.takeForcedMeasurement();
+                    newTemp     = bme280.readTemperature();
+                    newPress    = (bme280.readPressure() / 100.0F);
+                    newHum      = bme280.readHumidity();
+                    break;
+                case 2: // BMP280
                     bmp280.takeForcedMeasurement();
                     newTemp     = bmp280.readTemperature();
                     newPress    = (bmp280.readPressure() / 100.0F);
-                    sensors_event_t humidity, temp;
-                    aht20.getEvent(&humidity, &temp);
-                    newHum      = humidity.relative_humidity;
-                }
-                break;
+                    newHum      = 0;
+                    break;
+                case 3: // BME680
+                    #if !defined(HELTEC_V3) && !defined(HELTEC_V3_2)
+                        bme680.performReading();
+                        delay(50);
+                        if (bme680.endReading()) {
+                            newTemp     = bme680.temperature;
+                            newPress    = (bme680.pressure / 100.0F);
+                            newHum      = bme680.humidity;
+                            newGas      = bme680.gas_resistance / 1000.0; // in Kilo ohms
+                        }
+                    #endif
+                    break;
+                case 4: // Si7021
+                    newTemp     = si7021.readTemperature();
+                    newHum      = si7021.readHumidity();
+                    newPress    = 0;
+                    break;
+                case 5: // SHTC3
+                    {
+                        #ifdef LIGHTGATEWAY_PLUS_1_0
+                            sensors_event_t humidity, temp;
+                            shtc3.getEvent(&humidity, &temp);
+                            newTemp     = temp.temperature;
+                            newHum      = humidity.relative_humidity;
+                            newPress    = 0;
+                        #endif
+                    }
+                    break;
+                case 6: // BMP280 + AHT20
+                    {
+                        bmp280.takeForcedMeasurement();
+                        newTemp     = bmp280.readTemperature();
+                        newPress    = (bmp280.readPressure() / 100.0F);
+                        sensors_event_t humidity, temp;
+                        aht20.getEvent(&humidity, &temp);
+                        newHum      = humidity.relative_humidity;
+                    }
+                    break;
+            }
+
+            // If any of the readings are not a number, report the error
+            if (isnan(newTemp) || isnan(newHum) || isnan(newPress)) {
+                Serial.println("BME/BMP/Si7021 Module data failed");
+                fifthLine = "";
+                return ".../...g...t...";
+            }
         }
 
-        if (isnan(newTemp) || isnan(newHum) || isnan(newPress)) {
-            Serial.println("BME/BMP/Si7021 Module data failed");
-            fifthLine = "";
-            return ".../...g...t...";
+        // ---------------------------------------------------------------
+        // 3) Build the payload string that will be transmitted / displayed
+        // ---------------------------------------------------------------
+        String tempStr = generateTempString(((newTemp + Config.wxsensor.temperatureCorrection) * 1.8) + 32);
+
+        String humStr;
+        if (usingWunderground || wxModuleType == 1 || wxModuleType == 3 || wxModuleType == 4 || wxModuleType == 5 || wxModuleType == 6) {
+            humStr  = generateHumString(newHum);
+        } else if (wxModuleType == 2) {
+            humStr  = "..";
+        }
+
+        String presStr = (!usingWunderground && (wxModuleType == 4 || wxModuleType == 5))
+            ? "....."
+            : generatePresString(newPress + getAltitudeCorrection() / CORRECTION_FACTOR);
+
+        // Wind and rain strings (from Wunderground data if available)
+        String windDirStr  = generateWindDirString(wxData.winddir);
+        String windSpdStr  = generateWindSpeedString(wxData.windspeed);
+        String windGustStr = generateWindSpeedString(wxData.windgust);
+        String rainHrStr   = generateRainString(wxData.rainLastHour);
+        String rain24Str   = generateRainString(wxData.rainLast24Hours);
+        String rainMidStr  = generateRainString(wxData.rainSinceMidnight);
+        String luxStr      = generateLuminosityString(wxData.luminosity);
+
+        // Build the fifthLine that is used elsewhere for debug output
+        if (usingWunderground) {
+            fifthLine = "WU-> ";
         } else {
-            String tempStr = generateTempString(((newTemp + Config.wxsensor.temperatureCorrection) * 1.8) + 32);
-
-            String humStr;
-            if (wxModuleType == 1 || wxModuleType == 3 || wxModuleType == 4 || wxModuleType == 5 || wxModuleType == 6) {
-                humStr  = generateHumString(newHum);
-            } else if (wxModuleType == 2) {
-                humStr  = "..";
-            }
-
-            String presStr = (wxModuleType == 4 || wxModuleType == 5) 
-                ? "....."
-                : generatePresString(newPress + getAltitudeCorrection() / CORRECTION_FACTOR);
-
             fifthLine = "BME-> ";
-            fifthLine += String(int(newTemp + Config.wxsensor.temperatureCorrection));
-            fifthLine += "C ";
-            fifthLine += humStr;
-            fifthLine += "% ";
-            fifthLine += presStr.substring(0,4);
-            fifthLine += "hPa";
-
-            String wxPayload = ".../...g...t";
-            wxPayload += tempStr;
-            wxPayload += "h";
-            wxPayload += humStr;
-            wxPayload += "b";
-            wxPayload += presStr;
-
-            if (wxModuleType == 3) {
-                wxPayload += "Gas: ";
-                wxPayload += String(newGas);
-                wxPayload += "Kohms";
-            }
-            return wxPayload;
         }
+        fifthLine += String(int(newTemp + Config.wxsensor.temperatureCorrection));
+        fifthLine += "C ";
+        fifthLine += humStr;
+        fifthLine += "% ";
+        fifthLine += presStr.substring(0,4);
+        fifthLine += "hPa";
+
+        // Assemble the final weather payload per APRS spec:
+        // cccsssgggtttrrrpppPPPhhbbbbbLlll
+        String wxPayload = windDirStr;      // ccc - wind direction
+        wxPayload += "/";
+        wxPayload += windSpdStr;            // sss - wind speed
+        wxPayload += "g";
+        wxPayload += windGustStr;           // ggg - wind gust
+        wxPayload += "t";
+        wxPayload += tempStr;               // ttt - temperature
+        wxPayload += "r";
+        wxPayload += rainHrStr;             // rrr - rain last hour
+        wxPayload += "p";
+        wxPayload += rain24Str;             // ppp - rain last 24h
+        wxPayload += "P";
+        wxPayload += rainMidStr;            // PPP - rain since midnight
+        wxPayload += "h";
+        wxPayload += humStr;                // hh  - humidity
+        wxPayload += "b";
+        wxPayload += presStr;               // bbbbb - barometric pressure
+        wxPayload += luxStr;                // Llll or llll - luminosity (optional)
+
+        if (wxModuleType == 3) {
+            wxPayload += "Gas: ";
+            wxPayload += String(newGas);
+            wxPayload += "Kohms";
+        }
+        return wxPayload;
     }
 
-}
+} // namespace WX_Utils
