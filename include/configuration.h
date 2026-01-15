@@ -174,6 +174,7 @@ public:
 	bool    active;
 	String  apiKey;
 	String  stationId;
+	int     interval;
 };
 
 class Configuration {

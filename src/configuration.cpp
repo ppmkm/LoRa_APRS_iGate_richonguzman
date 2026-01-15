@@ -167,6 +167,7 @@ bool Configuration::writeFile() {
         data["wunderground"]["active"] = wunderground.active;
         data["wunderground"]["apiKey"] = wunderground.apiKey;
         data["wunderground"]["stationId"] = wunderground.stationId;
+        data["wunderground"]["interval"] = wunderground.interval;
 
         serializeJson(data, configFile);
         configFile.close();
@@ -341,11 +342,13 @@ bool Configuration::readFile() {
 
         if (!data["wunderground"].containsKey("active") ||
               !data["wunderground"].containsKey("apiKey") ||
-              !data["wunderground"].containsKey("stationId")) needsRewrite = true;
+              !data["wunderground"].containsKey("stationId") ||
+              !data["wunderground"].containsKey("interval")) needsRewrite = true;
 
         wunderground.active             = data["wunderground"]["active"] | false;
         wunderground.apiKey             = data["wunderground"]["apiKey"] | "WUNDERGROUND_API_KEY";
         wunderground.stationId          = data["wunderground"]["stationId"] | "WUNDERGROUND_STATION_ID";
+        wunderground.interval           = data["wunderground"]["interval"] | 5;
 
         if (!data["syslog"].containsKey("active") ||
             !data["syslog"].containsKey("server") ||
@@ -561,6 +564,7 @@ void Configuration::setDefaultValues() {
     wunderground.active             = false;
     wunderground.apiKey             = "";
     wunderground.stationId          = "";
+    wunderground.interval           = 5;
 
     Serial.println("New Data Created... All is Written!");
 }
