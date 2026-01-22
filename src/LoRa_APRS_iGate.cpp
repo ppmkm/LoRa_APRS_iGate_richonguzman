@@ -128,6 +128,7 @@ void loop() {
     if (Config.digi.ecoMode == 1) {
         SLEEP_Utils::checkWakeUpFlag();
         Utils::checkBeaconInterval();
+        Utils::checkWxInterval();
         STATION_Utils::processOutputPacketBufferUltraEcoMode();
         Utils::checkSleepByLowBatteryVoltage(1);
         SLEEP_Utils::startSleeping();
@@ -174,7 +175,8 @@ void loop() {
 
         Utils::checkDisplayInterval();
         Utils::checkBeaconInterval();
-        
+        Utils::checkWxInterval();
+
         APRS_IS_Utils::checkStatus(); // Need that to update display, maybe split this and send APRSIS status to display func?
 
         String packet = "";

@@ -37,6 +37,7 @@ namespace Utils {
     void    setupDisplay();
     void    showActiveStations();
     void    checkBeaconInterval();
+    void    checkWxInterval();
     void    checkDisplayInterval();
     void    validateFreqs();
     void    typeOfPacket(const String& packet, const uint8_t packetType);

@@ -249,7 +249,14 @@ namespace WEB_Utils {
         if (Config.wxsensor.active) {
             Config.wxsensor.heightCorrection        = getParamIntSafe("wxsensor.heightCorrection", Config.wxsensor.heightCorrection);
             Config.wxsensor.temperatureCorrection   = getParamFloatSafe("wxsensor.temperatureCorrection", Config.wxsensor.temperatureCorrection);
-            Config.beacon.symbol = "_";
+        }
+
+
+        Config.wunderground.active                  = request->hasParam("wunderground.active", true);
+        if (Config.wunderground.active) {
+            Config.wunderground.stationId           = getParamStringSafe("wunderground.stationId", Config.wunderground.stationId);
+            Config.wunderground.apiKey              = getParamStringSafe("wunderground.apiKey", Config.wunderground.apiKey);
+            Config.wunderground.interval            = getParamIntSafe("wunderground.interval", Config.wunderground.interval);
         }
 
 

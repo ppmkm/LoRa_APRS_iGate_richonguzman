@@ -20,13 +20,32 @@
 #define WX_UTILS_H_
 
 #include <Adafruit_Sensor.h>
-#include <Adafruit_AHTX0.h> 
+#include <Adafruit_AHTX0.h>
 #include <Adafruit_BME280.h>
 #include <Adafruit_BMP280.h>
 #include <Adafruit_BME680.h>
 #include "Adafruit_Si7021.h"
 #include <Arduino.h>
 
+// Common weather data structure used by all data sources
+struct WX_Data {
+    float temperature;       // °C
+    float humidity;          // % (00 = 100%)
+    float pressure;          // hPa
+    float winddir;           // degrees
+    float windspeed;         // m/s
+    float windgust;          // m/s
+    float rainLastHour;      // mm
+    float rainLast24Hours;   // mm
+    float rainSinceMidnight; // mm
+    float luminosity;        // W/m²
+    float gasResistance;     // kOhms (BME680 only)
+    bool  valid;             // true if data was successfully read
+    bool  hasHumidity;       // sensor supports humidity
+    bool  hasPressure;       // sensor supports pressure
+};
+
+WX_Data initWxData();
 
 namespace WX_Utils {
 
@@ -36,6 +55,8 @@ namespace WX_Utils {
     String  generateHumString(const float sensorHum);
     String  generatePresString(const float sensorPres);
     String  readDataSensor();
+    WX_Data fetchWundergroundData();
+    WX_Data readLocalSensor();
 
 }
 

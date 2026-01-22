@@ -196,6 +196,18 @@ function loadSettings(settings) {
     TelemetryHeightCorrection.disabled  = !TelemetryCheckbox.checked;
     TelemetryTempCorrection.disabled    = !TelemetryCheckbox.checked;
     
+    // WUNDERGROUND
+    if (settings.wunderground) {
+        document.getElementById("wunderground.active").checked          = settings.wunderground.active;
+        document.getElementById("wunderground.stationId").value         = settings.wunderground.stationId;
+        document.getElementById("wunderground.apiKey").value            = settings.wunderground.apiKey;
+        document.getElementById("wunderground.interval").value          = settings.wunderground.interval;
+        WundergroundCheckbox.checked        = settings.wunderground.active;
+        WundergroundStationId.disabled      = !WundergroundCheckbox.checked;
+        WundergroundApiKey.disabled         = !WundergroundCheckbox.checked;
+        WundergroundInterval.disabled       = !WundergroundCheckbox.checked;
+    }
+    
     // SYSLOG
     document.getElementById("syslog.active").checked                    = settings.syslog.active;
     document.getElementById("syslog.server").value                      = settings.syslog.server;
@@ -389,6 +401,17 @@ const TelemetryTempCorrection           = document.querySelector('input[name="wx
 TelemetryCheckbox.addEventListener("change", function () {
     TelemetryHeightCorrection.disabled  = !this.checked;
     TelemetryTempCorrection.disabled    = !this.checked;
+});
+
+// Wunderground Switches
+const WundergroundCheckbox              = document.querySelector('input[name="wunderground.active"]');
+const WundergroundStationId             = document.querySelector('input[name="wunderground.stationId"]');
+const WundergroundApiKey                = document.querySelector('input[name="wunderground.apiKey"]');
+const WundergroundInterval              = document.querySelector('input[name="wunderground.interval"]');
+WundergroundCheckbox.addEventListener("change", function () {
+    WundergroundStationId.disabled      = !this.checked;
+    WundergroundApiKey.disabled         = !this.checked;
+    WundergroundInterval.disabled       = !this.checked;
 });
 
 // Syslog Switches

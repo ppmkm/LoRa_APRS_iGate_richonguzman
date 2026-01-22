@@ -1420,6 +1420,96 @@
                                         width="20"
                                         height="20"
                                         fill="currentColor"
+                                        class="bi bi-cloud-sun-fill"
+                                        viewBox="0 0 16 16"
+                                    >
+                                        <path
+                                            d="M11.473 11a4.5 4.5 0 0 0-8.72-.99A3 3 0 0 0 3 16h8.5a2.5 2.5 0 0 0 0-5z"
+                                        />
+                                        <path
+                                            d="M10.5 1.5a.5.5 0 0 0-1 0v1a.5.5 0 0 0 1 0zm3.743 1.964a.5.5 0 1 0-.707-.707l-.708.707a.5.5 0 0 0 .708.708zm-7.779-.707a.5.5 0 0 0-.707.707l.707.708a.5.5 0 1 0 .708-.708zm1.414 3.096a.5.5 0 0 0-.12.83 2 2 0 0 1 .401 1.337V8.5a.5.5 0 1 0 1 0V7.819a3 3 0 0 0-.879-2.105.5.5 0 0 0-.402-.054M14 7.5a.5.5 0 1 0 0-1h-1a.5.5 0 0 0 0 1zM2.5 6.5a.5.5 0 0 0 0 1h1a.5.5 0 0 0 0-1zm1.539 2.657a.5.5 0 1 0 .707.707l.708-.707a.5.5 0 0 0-.708-.708z"
+                                        />
+                                    </svg>
+                                    Wunderground
+                                </h5>
+                                <small>Fetch weather data from Weather Underground</small>
+                            </div>
+                            <div class="col-9">
+                                <div class="row">
+                                    <div class="col-12">
+                                        <div class="form-check form-switch">
+                                            <input
+                                                type="checkbox"
+                                                name="wunderground.active"
+                                                id="wunderground.active"
+                                                class="form-check-input"
+                                            />
+                                            <label for="wunderground.active" class="form-label">Enable Wunderground Download
+                                            	<small>(Transmit over APRS data from Wunderground PWS).</small>
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="row mt-2">
+                                    <div class="col-6">
+                                        <label for="wunderground.stationId" class="form-label">Station ID</label>
+                                        <div class="input-group">
+                                            <input
+                                                type="text"
+                                                name="wunderground.stationId"
+                                                id="wunderground.stationId"
+                                                placeholder="KSTATECI1"
+                                                class="form-control"
+                                            />
+                                        </div>
+                                    </div>
+                                    <div class="col-6">
+                                      <label for="wunderground.apiKey" class="form-label">API Key</label>
+                                        <div class="input-group">
+                                            <input
+                                                type="text"
+                                                name="wunderground.apiKey"
+                                                id="wunderground.apiKey"
+                                                placeholder="API Key"
+                                                class="form-control"
+                                            />
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="row mt-3">
+                                    <div class="col-6">
+                                        <label for="wunderground.interval" class="form-label"
+                                            >Fetch Interval</label
+                                        >
+                                        <div class="input-group">
+                                            <input
+                                                type="number"
+                                                name="wunderground.interval"
+                                                id="wunderground.interval"
+                                                placeholder="5"
+                                                class="form-control"
+                                                step="1"
+                                                min="1"
+                                                max="60"
+                                            />
+                                            <span class="input-group-text"
+                                                >minutes</span
+                                            >
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <hr>
+
+                        <div class="row my-5 d-flex align-items-top">
+                            <div class="col-lg-3 col-sm-12">
+                                <h5>
+                                    <svg
+                                        xmlns="http://www.w3.org/2000/svg"
+                                        width="20"
+                                        height="20"
+                                        fill="currentColor"
                                         class="bi bi-file-earmark-text-fill"
                                         viewBox="0 0 16 16"
                                     >

@@ -19,6 +19,7 @@
 #include <APRSPacketLib.h>
 #include <TinyGPS++.h>
 #include <WiFi.h>
+#include <time.h>
 #include "telemetry_utils.h"
 #include "configuration.h"
 #include "station_utils.h"
@@ -64,6 +65,7 @@ bool        statusAfterBoot     = true;
 bool        sendStartTelemetry  = true;
 bool        beaconUpdate        = false;
 uint32_t    lastBeaconTx        = 0;
+uint32_t    lastWxTx            = 0;
 uint32_t    lastScreenOn        = millis();
 String      beaconPacket;
 String      secondaryBeaconPacket;
@@ -146,9 +148,8 @@ namespace Utils {
         if (beaconUpdate) {
             if (!Config.display.alwaysOn && Config.display.timeout != 0) displayToggle(true);
 
-            if (sendStartTelemetry && 
+            if (sendStartTelemetry &&
                 Config.battery.sendVoltageAsTelemetry &&
-                !Config.wxsensor.active && 
                 (Config.battery.sendInternalVoltage || Config.battery.sendExternalVoltage) &&
                 (lastBeaconTx > 0)) {
                 TELEMETRY_Utils::sendEquationsUnitsParameters();
@@ -180,11 +181,7 @@ namespace Utils {
                 }
             #endif
 
-            if (Config.wxsensor.active) {
-                String sensorData = (wxModuleType == 0) ? ".../...g...t..." : WX_Utils::readDataSensor();
-                beaconPacket            += sensorData;
-                secondaryBeaconPacket   += sensorData;
-            }
+            // Weather data is now sent as separate positionless WX packets via checkWxInterval()
             beaconPacket            += Config.beacon.comment;
             secondaryBeaconPacket   += Config.beacon.comment;
 
@@ -242,7 +239,7 @@ namespace Utils {
                 }
             #endif
 
-            if (Config.battery.sendVoltageAsTelemetry && !Config.wxsensor.active && (Config.battery.sendInternalVoltage || Config.battery.sendExternalVoltage)){
+            if (Config.battery.sendVoltageAsTelemetry && (Config.battery.sendInternalVoltage || Config.battery.sendExternalVoltage)) {
                 String encodedTelemetry = TELEMETRY_Utils::generateEncodedTelemetry();
                 beaconPacket += encodedTelemetry;
                 secondaryBeaconPacket += encodedTelemetry;
@@ -275,6 +272,113 @@ namespace Utils {
         if (statusAfterBoot && Config.beacon.statusActive && !Config.beacon.statusPacket.isEmpty()) {
             processStatus();
         }
+    }
+
+    // Helper to format latitude for APRS (DDMM.MMN/S)
+    String formatLatitudeAPRS(double lat) {
+        char ns = (lat >= 0) ? 'N' : 'S';
+        lat = fabs(lat);
+        int degrees = (int)lat;
+        double minutes = (lat - degrees) * 60.0;
+        int minInt = (int)minutes;
+        int minFrac = (int)((minutes - minInt) * 100 + 0.5);
+        char buf[48];
+        snprintf(buf, sizeof(buf), "%02d%02d.%02d%c", degrees, minInt, minFrac, ns);
+        return String(buf);
+    }
+
+    // Helper to format longitude for APRS (DDDMM.MME/W)
+    String formatLongitudeAPRS(double lon) {
+        char ew = (lon >= 0) ? 'E' : 'W';
+        lon = fabs(lon);
+        int degrees = (int)lon;
+        double minutes = (lon - degrees) * 60.0;
+        int minInt = (int)minutes;
+        int minFrac = (int)((minutes - minInt) * 100 + 0.5);
+        char buf[48];
+        snprintf(buf, sizeof(buf), "%03d%02d.%02d%c", degrees, minInt, minFrac, ew);
+        return String(buf);
+    }
+
+    // Helper to get APRS timestamp (DDHHMMz in UTC)
+    String getAPRSTimestamp() {
+        time_t now;
+        time(&now);
+        struct tm* utc = gmtime(&now);
+        char buf[8];
+        snprintf(buf, sizeof(buf), "%02d%02d%02dz", utc->tm_mday, utc->tm_hour, utc->tm_min);
+        return String(buf);
+    }
+
+    void checkWxInterval() {
+        // Only process if weather sensor is active
+        if (!Config.wxsensor.active) {
+            return;
+        }
+
+        uint32_t lastWx = millis() - lastWxTx;
+        if (lastWxTx != 0 && lastWx < Config.wunderground.interval * 60 * 1000) {
+            return;  // Interval not yet elapsed
+        }
+
+        // Get weather data from appropriate source
+        String sensorData;
+        if (Config.wunderground.active) {
+            Serial.println("-- Fetching Weather Underground data --");
+            sensorData = WX_Utils::readDataSensor();  // This tries Wunderground first, then local
+        } else if (wxModuleType != 0) {
+            Serial.println("-- Reading local weather sensor --");
+            sensorData = WX_Utils::readDataSensor();
+        } else {
+            Serial.println("No weather source available, skipping WX packet");
+            return;
+        }
+
+        // Check if we got valid data
+        if (sensorData.startsWith(".../...g...t...")) {
+            Serial.println("Weather data invalid, skipping WX packet");
+            return;
+        }
+
+        // Build complete weather report with position and timestamp
+        // Format: @DDHHMMzLLLL.LLN/LLLLL.LLW_ccc/sss...
+        String wxPacket = APRSPacketLib::generateBasePacket(Config.callsign, "APLRG1", Config.beacon.path);
+        wxPacket += ",qAC:@";
+        wxPacket += getAPRSTimestamp();
+        wxPacket += formatLatitudeAPRS(Config.beacon.latitude);
+        wxPacket += "/";
+        wxPacket += formatLongitudeAPRS(Config.beacon.longitude);
+        wxPacket += "_";
+        wxPacket += sensorData;
+
+        // Send via APRS-IS
+        if (Config.aprs_is.active && passcodeValid && !backUpDigiMode) {
+            Serial.println("-- Sending WX Packet to APRS-IS --");
+            Serial.println(wxPacket);
+            displayShow(firstLine, secondLine, thirdLine, fourthLine, fifthLine, sixthLine, "SENDING WX PACKET", 0);
+            #ifdef HAS_A7670
+                A7670_Utils::uploadToAPRSIS(wxPacket);
+            #else
+                APRS_IS_Utils::upload(wxPacket);
+            #endif
+        }
+
+        // Send via RF if configured
+        if (Config.beacon.sendViaRF || backUpDigiMode) {
+            String wxPacketRF = APRSPacketLib::generateBasePacket(Config.callsign, "APLRG1", Config.beacon.path);
+            wxPacketRF += ":@";
+            wxPacketRF += getAPRSTimestamp();
+            wxPacketRF += formatLatitudeAPRS(Config.beacon.latitude);
+            wxPacketRF += "/";
+            wxPacketRF += formatLongitudeAPRS(Config.beacon.longitude);
+            wxPacketRF += "_";
+            wxPacketRF += sensorData;
+            Serial.println("-- Sending WX Packet to RF --");
+            STATION_Utils::addToOutputPacketBuffer(wxPacketRF, true);
+        }
+
+        lastWxTx = millis();
+        lastScreenOn = millis();
     }
 
     void checkDisplayInterval() {
