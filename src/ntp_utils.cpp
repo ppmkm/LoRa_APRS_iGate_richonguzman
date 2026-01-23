@@ -36,6 +36,8 @@ namespace NTP_Utils {
         if (WiFi.status() == WL_CONNECTED && Config.digi.ecoMode == 0 && Config.callsign != "NOCALL-10") {
             int gmt = Config.ntp.gmtCorrection * 3600;
             timeClient = new NTPClient(ntpUDP, Config.ntp.server.c_str(), gmt, 15 * 60 * 1000); // Update interval 15 min
+            configTime(gmt, 0, Config.ntp.server.c_str());
+            Serial.println("NTP Client initialized with server: " + Config.ntp.server + " and GMT correction: " + String(Config.ntp.gmtCorrection));
             timeClient->begin();
         }
     }

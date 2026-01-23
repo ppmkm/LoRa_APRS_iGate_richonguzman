@@ -1422,6 +1422,28 @@
                                         />
                                     </div>
                                 </div>
+                                <div class="row mt-3">
+                                    <div class="col-6">
+                                        <label for="wunderground.interval" class="form-label"
+                                            >WX Send Interval</label
+                                        >
+                                        <div class="input-group">
+                                            <input
+                                                type="number"
+                                                name="wunderground.interval"
+                                                id="wunderground.interval"
+                                                placeholder="5"
+                                                class="form-control"
+                                                step="1"
+                                                min="1"
+                                                max="60"
+                                            />
+                                            <span class="input-group-text"
+                                                >minutes</span
+                                            >
+                                        </div>
+                                    </div>
+                                </div>
                                 <div class="row mt-2">
                                     <div class="col-3">
                                         <div class="form-check form-switch">
@@ -1483,8 +1505,6 @@
                                             id="wxsensor.wxSymbol"
                                         >
                                             <option value="/_">WX Station (blue)</option>
-                                            <option value="\W">National WX Service</option>
-                                            <option value="/W">National WX Site</option>
                                             <option value="L_">Blue circle with L</option>                                            
                                         </select>
                                         <input type="hidden" name="wxsensor.overlay" id="wxsensor.overlay" />
@@ -1596,28 +1616,6 @@
                                                 placeholder="API Key"
                                                 class="form-control"
                                             />
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="row mt-3">
-                                    <div class="col-6">
-                                        <label for="wunderground.interval" class="form-label"
-                                            >Fetch Interval</label
-                                        >
-                                        <div class="input-group">
-                                            <input
-                                                type="number"
-                                                name="wunderground.interval"
-                                                id="wunderground.interval"
-                                                placeholder="5"
-                                                class="form-control"
-                                                step="1"
-                                                min="1"
-                                                max="60"
-                                            />
-                                            <span class="input-group-text"
-                                                >minutes</span
-                                            >
                                         </div>
                                     </div>
                                 </div>
