@@ -282,6 +282,15 @@ namespace Utils {
         double minutes = (lat - degrees) * 60.0;
         int minInt = (int)minutes;
         int minFrac = (int)((minutes - minInt) * 100 + 0.5);
+        // Handle rollover when rounding pushes fraction to 100
+        if (minFrac >= 100) {
+            minFrac -= 100;
+            minInt++;
+            if (minInt >= 60) {
+                minInt -= 60;
+                degrees++;
+            }
+        }
         char buf[48];
         snprintf(buf, sizeof(buf), "%02d%02d.%02d%c", degrees, minInt, minFrac, ns);
         return String(buf);
@@ -295,6 +304,15 @@ namespace Utils {
         double minutes = (lon - degrees) * 60.0;
         int minInt = (int)minutes;
         int minFrac = (int)((minutes - minInt) * 100 + 0.5);
+        // Handle rollover when rounding pushes fraction to 100
+        if (minFrac >= 100) {
+            minFrac -= 100;
+            minInt++;
+            if (minInt >= 60) {
+                minInt -= 60;
+                degrees++;
+            }
+        }
         char buf[48];
         snprintf(buf, sizeof(buf), "%03d%02d.%02d%c", degrees, minInt, minFrac, ew);
         return String(buf);
@@ -322,38 +340,88 @@ namespace Utils {
         }
 
         // Get weather data from appropriate source
-        String sensorData;
+        WX_Data wxData;
         if (Config.wunderground.active) {
             Serial.println("-- Fetching Weather Underground data --");
-            sensorData = WX_Utils::readDataSensor();  // This tries Wunderground first, then local
+            wxData = WX_Utils::getWeatherData();
         } else if (wxModuleType != 0) {
             Serial.println("-- Reading local weather sensor --");
-            sensorData = WX_Utils::readDataSensor();
+            wxData = WX_Utils::getWeatherData();
         } else {
             Serial.println("No weather source available, skipping WX packet");
             return;
         }
 
         // Check if we got valid data
-        if (sensorData.startsWith(".../...g...t...")) {
+        if (!wxData.valid) {
             Serial.println("Weather data invalid, skipping WX packet");
             return;
         }
 
-        // Build complete weather report with position and timestamp
-        // Format: @DDHHMMzLLLL.LLN/LLLLL.LLW_ccc/sss...
-        String wxPacket = APRSPacketLib::generateBasePacket(Config.callsign, "APLRG1", Config.beacon.path);
+        // -----------------------------------------------------------------------
+        // Build complete weather report with compressed position and timestamp
+        // Compressed format: CALL>TOCALL,PATH,qAC:@DDHHMMz/YYYYXXXXscsGgNNNtNNN...
+        // Where:
+        //   @ = timestamp indicator
+        //   DDHHMMz = day/hour/minute UTC
+        //   / = overlay character (table select)
+        //   YYYY = compressed latitude (4 base91 chars)
+        //   XXXX = compressed longitude (4 base91 chars)
+        //   s = weather symbol (e.g., _)
+        //   c = wind direction encoded in course byte (1 base91 char)
+        //   s = wind speed encoded in speed byte (1 base91 char)
+        //   G = compression type byte (0x47)
+        //   gNNN... = additional weather data (gust, temp, rain, humidity, pressure, etc.)
+        // -----------------------------------------------------------------------
+
+        // Use wxsensor config if set, otherwise fall back to beacon/main config
+        String wxCallsign = Config.wxsensor.callsign.length() > 0 ? Config.wxsensor.callsign : Config.callsign;
+        String wxOverlay = Config.wxsensor.overlay.length() > 0 ? Config.wxsensor.overlay : "/";
+        String wxSymbol = Config.wxsensor.symbol.length() > 0 ? Config.wxsensor.symbol : "_";
+        double wxLatitude = (Config.wxsensor.latitude != 0.0 || Config.wxsensor.longitude != 0.0) ? Config.wxsensor.latitude : Config.beacon.latitude;
+        double wxLongitude = (Config.wxsensor.latitude != 0.0 || Config.wxsensor.longitude != 0.0) ? Config.wxsensor.longitude : Config.beacon.longitude;
+
+        // Convert wind speed from m/s to knots for APRS encoding
+        float windSpeedKnots = isnan(wxData.windspeed) ? 0 : wxData.windspeed * 1.94384;
+        float windDir = isnan(wxData.winddir) ? 0 : wxData.winddir;
+
+        // Generate compressed position with wind direction/speed encoded in course/speed bytes
+        String compressedPos = APRSPacketLib::encodeGPSIntoBase91(
+            wxLatitude,
+            wxLongitude,
+            windDir,           // Course byte = wind direction (0-360 degrees)
+            windSpeedKnots,    // Speed byte = wind speed (knots)
+            wxSymbol,          // Weather symbol (typically "_")
+            false,             // Don't send altitude
+            0,                 // altitude (unused)
+            false,             // Not a standing update (we want course/speed encoded, not blank)
+            0                  // No position ambiguity
+        );
+
+        // Generate additional weather data
+        String additionalWxData = WX_Utils::generateCompressedWeatherData(wxData);
+
+        // Use WU observation timestamp if available, otherwise use current time
+        String timestamp;
+        if (wxData.obsTimeUtc.length() > 0) {
+            timestamp = WX_Utils::parseObsTimeToAPRS(wxData.obsTimeUtc);
+            Serial.println("Using WU observation timestamp: " + timestamp);
+        }
+        if (timestamp.length() == 0) {
+            timestamp = getAPRSTimestamp();
+            Serial.println("Using current time timestamp: " + timestamp);
+        }
+
+        String wxPacket = APRSPacketLib::generateBasePacket(wxCallsign, "APLRG1", Config.beacon.path);
         wxPacket += ",qAC:@";
-        wxPacket += getAPRSTimestamp();
-        wxPacket += formatLatitudeAPRS(Config.beacon.latitude);
-        wxPacket += "/";
-        wxPacket += formatLongitudeAPRS(Config.beacon.longitude);
-        wxPacket += "_";
-        wxPacket += sensorData;
+        wxPacket += timestamp;
+        wxPacket += wxOverlay;
+        wxPacket += compressedPos;
+        wxPacket += additionalWxData;
 
         // Send via APRS-IS
-        if (Config.aprs_is.active && passcodeValid && !backUpDigiMode) {
-            Serial.println("-- Sending WX Packet to APRS-IS --");
+        if (Config.wxsensor.sendViaAPRSIS && Config.aprs_is.active && passcodeValid && !backUpDigiMode) {
+            Serial.println("-- Sending WX Packet to APRS-IS (compressed format) --");
             Serial.println(wxPacket);
             displayShow(firstLine, secondLine, thirdLine, fourthLine, fifthLine, sixthLine, "SENDING WX PACKET", 0);
             #ifdef HAS_A7670
@@ -364,17 +432,16 @@ namespace Utils {
         }
 
         // Send via RF if configured
-        if (Config.beacon.sendViaRF || backUpDigiMode) {
-            String wxPacketRF = APRSPacketLib::generateBasePacket(Config.callsign, "APLRG1", Config.beacon.path);
+        if (Config.wxsensor.sendViaRF || backUpDigiMode) {
+            String wxPacketRF = APRSPacketLib::generateBasePacket(wxCallsign, "APLRG1", Config.beacon.path);
             wxPacketRF += ":@";
-            wxPacketRF += getAPRSTimestamp();
-            wxPacketRF += formatLatitudeAPRS(Config.beacon.latitude);
-            wxPacketRF += "/";
-            wxPacketRF += formatLongitudeAPRS(Config.beacon.longitude);
-            wxPacketRF += "_";
-            wxPacketRF += sensorData;
-            Serial.println("-- Sending WX Packet to RF --");
-            STATION_Utils::addToOutputPacketBuffer(wxPacketRF, true);
+            wxPacketRF += timestamp;
+            wxPacketRF += wxOverlay;
+            wxPacketRF += compressedPos;
+            wxPacketRF += additionalWxData;
+            Serial.println("-- Sending WX Packet to RF (compressed format) --");
+            // wxFreq: 0 = RX freq (pass true), 1 = TX freq (pass false)
+            STATION_Utils::addToOutputPacketBuffer(wxPacketRF, Config.wxsensor.wxFreq == 0);
         }
 
         lastWxTx = millis();

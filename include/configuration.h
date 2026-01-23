@@ -115,6 +115,14 @@ public:
     bool    active;
     int     heightCorrection;
     float   temperatureCorrection;
+    String  callsign;
+    String  overlay;
+    String  symbol;
+    double  latitude;
+    double  longitude;
+    bool    sendViaAPRSIS;
+    bool    sendViaRF;
+    int     wxFreq;
 };
 
 class SYSLOG {

@@ -1408,6 +1408,129 @@
                                         </div>
                                     </div>
                                 </div>
+                                <div class="row mt-2">
+                                    <div class="col-12">
+                                        <label for="wxsensor.callsign" class="form-label"
+                                            >WX Station Callsign <small>(leave empty to use main callsign)</small></label
+                                        >
+                                        <input
+                                            type="text"
+                                            name="wxsensor.callsign"
+                                            id="wxsensor.callsign"
+                                            placeholder=""
+                                            class="form-control"
+                                        />
+                                    </div>
+                                </div>
+                                <div class="row mt-2">
+                                    <div class="col-3">
+                                        <div class="form-check form-switch">
+                                            <input
+                                                type="checkbox"
+                                                name="wxsensor.sendViaAPRSIS"
+                                                id="wxsensor.sendViaAPRSIS"
+                                                class="form-check-input"
+                                            />
+                                            <label
+                                                for="wxsensor.sendViaAPRSIS"
+                                                class="form-label"
+                                                >Send WX via APRS-IS
+                                            </label>
+                                        </div>
+                                    </div>
+                                    <div class="col-3">
+                                        <div class="form-check form-switch">
+                                            <input
+                                                type="checkbox"
+                                                name="wxsensor.sendViaRF"
+                                                id="wxsensor.sendViaRF"
+                                                class="form-check-input"
+                                            />
+                                            <label
+                                                for="wxsensor.sendViaRF"
+                                                class="form-label"
+                                                >Send WX via RF
+                                            </label>
+                                        </div>
+                                    </div>
+                                    <div class="col-6">
+                                        <label
+                                            for="wxsensor.wxFreq"
+                                            class="form-label">
+                                            <small>(Select LoRa WX Frequency)</small>
+                                        </label>
+                                        <select
+                                            class="form-select form-select"
+                                            name="wxsensor.wxFreq"
+                                            id="wxsensor.wxFreq"
+                                            disabled
+                                        >
+                                            <option value="0">WX on Rx Freq</option>
+                                            <option value="1">WX on Tx Freq</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="row mt-2">
+                                    <div class="col-8">
+                                        <label
+                                            for="wxsensor.wxSymbol"
+                                            class="form-label"
+                                            >Symbol</label
+                                        >
+                                        <select
+                                            class="form-select form-select"
+                                            name="wxsensor.wxSymbol"
+                                            id="wxsensor.wxSymbol"
+                                        >
+                                            <option value="/_">WX Station (blue)</option>
+                                            <option value="\W">National WX Service</option>
+                                            <option value="/W">National WX Site</option>
+                                            <option value="L_">Blue circle with L</option>                                            
+                                        </select>
+                                        <input type="hidden" name="wxsensor.overlay" id="wxsensor.overlay" />
+                                        <input type="hidden" name="wxsensor.symbol" id="wxsensor.symbol" />
+                                    </div>
+                                    <div
+                                        class="col-4 mt-3"
+                                        style="text-align: center"
+                                    >
+                                        <img
+                                            id="wxSymbolImage"
+                                            src=""
+                                            width="60"
+                                            height="60"
+                                            class="me-2"
+                                        />
+                                    </div>
+                                </div>
+                                <div class="row mt-2">                                    
+                                    <div class="col-6">
+                                        <label for="wxsensor.latitude" class="form-label"
+                                            >Latitude <small>(0 = beacon)</small></label
+                                        >
+                                        <input
+                                            type="number"
+                                            name="wxsensor.latitude"
+                                            id="wxsensor.latitude"
+                                            placeholder="0.0"
+                                            class="form-control"
+                                            step="0.001"
+                                        />
+                                    </div>
+                                    <div class="col-6">
+                                        <label for="wxsensor.longitude" class="form-label"
+                                            >Longitude <small>(0 = beacon)</small></label
+                                        >
+                                        <input
+                                            type="number"
+                                            name="wxsensor.longitude"
+                                            id="wxsensor.longitude"
+                                            placeholder="0.0"
+                                            class="form-control"
+                                            step="0.001"
+                                        />
+                                    </div>
+                                </div>
                             </div>
                         </div>
                         <hr>

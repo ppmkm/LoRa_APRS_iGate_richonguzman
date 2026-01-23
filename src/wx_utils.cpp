@@ -72,6 +72,7 @@ WX_Data initWxData() {
     data.rainSinceMidnight = NAN;
     data.luminosity        = NAN;
     data.gasResistance     = NAN;
+    data.obsTimeUtc        = "";
     data.valid             = false;
     data.hasHumidity       = true;
     data.hasPressure       = true;
@@ -242,6 +243,9 @@ namespace WX_Utils {
                 JsonObject obs = doc["observations"][0];
                 if (!obs.isNull()) {
                     // Top-level fields
+                    if (obs.containsKey("obsTimeUtc")) {
+                        data.obsTimeUtc = obs["obsTimeUtc"].as<String>();
+                    }
                     if (obs.containsKey("humidity")) {
                         data.humidity = obs["humidity"];
                     }
@@ -474,6 +478,98 @@ namespace WX_Utils {
         #else
             return Config.wxsensor.heightCorrection;
         #endif
+    }
+
+    String parseObsTimeToAPRS(const String& obsTimeUtc) {
+        // Parse ISO 8601 timestamp: "2026-01-15T08:00:00Z"
+        // Convert to APRS format: DDHHMMz
+        if (obsTimeUtc.length() < 19) {
+            return "";  // Invalid format
+        }
+
+        // Extract day, hour, minute from "YYYY-MM-DDTHH:MM:SSZ"
+        String day = obsTimeUtc.substring(8, 10);    // DD
+        String hour = obsTimeUtc.substring(11, 13);  // HH
+        String minute = obsTimeUtc.substring(14, 16); // MM
+
+        return day + hour + minute + "z";
+    }
+
+    WX_Data getWeatherData() {
+        // Try Weather Underground first, then fall back to local sensor
+        WX_Data wxData = fetchWundergroundData();
+        bool usingWunderground = wxData.valid;
+
+        if (!usingWunderground) {
+            wxData = readLocalSensor();
+            if (!wxData.valid) {
+                Serial.println("No weather data available from any source");
+                fifthLine = "";
+                return wxData;
+            }
+        }
+
+        // Update global variables for compatibility with other modules
+        newTemp  = wxData.temperature;
+        newHum   = wxData.humidity;
+        newPress = wxData.pressure;
+        newGas   = wxData.gasResistance;
+
+        // Build display line
+        String tempStr = generateTempString(((wxData.temperature + Config.wxsensor.temperatureCorrection) * 1.8) + 32);
+        String humStr  = wxData.hasHumidity ? generateHumString(wxData.humidity) : "..";
+        String presStr = wxData.hasPressure
+            ? generatePresString(wxData.pressure + getAltitudeCorrection() / CORRECTION_FACTOR)
+            : ".....";
+
+        fifthLine = usingWunderground ? "WU-> " : "BME-> ";
+        fifthLine += String(int(wxData.temperature + Config.wxsensor.temperatureCorrection));
+        fifthLine += "C ";
+        fifthLine += humStr;
+        fifthLine += "% ";
+        fifthLine += presStr.substring(0, 4);
+        fifthLine += "hPa";
+
+        return wxData;
+    }
+
+    // -----------------------------------------------------------------------
+    // Generate compressed weather data for APRS compressed position format
+    // Wind direction/speed are encoded in the compressed position bytes,
+    // so this function only generates the additional weather parameters
+    // Format: gNNNtNNNrNNNpNNNPNNNhNNbNNNNNLNNN...
+    // -----------------------------------------------------------------------
+    String generateCompressedWeatherData(const WX_Data& wxData) {
+        String tempStr = generateTempString(((wxData.temperature + Config.wxsensor.temperatureCorrection) * 1.8) + 32);
+        String humStr  = wxData.hasHumidity ? generateHumString(wxData.humidity) : "..";
+        String presStr = wxData.hasPressure
+            ? generatePresString(wxData.pressure + getAltitudeCorrection() / CORRECTION_FACTOR)
+            : ".....";
+
+        String windGustStr = generateWindSpeedString(wxData.windgust);
+        String rainHrStr   = generateRainString(wxData.rainLastHour);
+        String rain24Str   = generateRainString(wxData.rainLast24Hours);
+        String rainMidStr  = generateRainString(wxData.rainSinceMidnight);
+        String luxStr      = generateLuminosityString(wxData.luminosity);
+
+        // Assemble compressed weather data
+        // NOTE: Wind dir/speed (c.../s...) are NOT included here - they're encoded in the
+        // compressed position course/speed bytes. We start with wind gust (g).
+        String wxPayload = "g" + windGustStr;  // Wind gust
+        wxPayload += "t" + tempStr;             // Temperature
+        wxPayload += "r" + rainHrStr;           // Rain last hour
+        wxPayload += "p" + rain24Str;           // Rain last 24 hours
+        wxPayload += "P" + rainMidStr;          // Rain since midnight
+        wxPayload += "h" + humStr;              // Humidity
+        wxPayload += "b" + presStr;             // Barometric pressure
+        wxPayload += luxStr;                    // Solar radiation/luminosity
+
+        // BME680 gas resistance (if available)
+        if (!isnan(wxData.gasResistance)) {
+            wxPayload += "Gas: " + String(wxData.gasResistance) + "Kohms";
+        }
+
+        return wxPayload;
     }
 
     String readDataSensor() {

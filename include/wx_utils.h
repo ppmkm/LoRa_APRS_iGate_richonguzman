@@ -40,6 +40,7 @@ struct WX_Data {
     float rainSinceMidnight; // mm
     float luminosity;        // W/m²
     float gasResistance;     // kOhms (BME680 only)
+    String obsTimeUtc;       // Observation timestamp (from WU API)
     bool  valid;             // true if data was successfully read
     bool  hasHumidity;       // sensor supports humidity
     bool  hasPressure;       // sensor supports pressure
@@ -57,6 +58,9 @@ namespace WX_Utils {
     String  readDataSensor();
     WX_Data fetchWundergroundData();
     WX_Data readLocalSensor();
+    WX_Data getWeatherData();
+    String  generateCompressedWeatherData(const WX_Data& wxData);
+    String  parseObsTimeToAPRS(const String& obsTimeUtc);
 
 }
 

@@ -246,10 +246,16 @@ namespace WEB_Utils {
 
 
         Config.wxsensor.active                      = request->hasParam("wxsensor.active", true);
-        if (Config.wxsensor.active) {
-            Config.wxsensor.heightCorrection        = getParamIntSafe("wxsensor.heightCorrection", Config.wxsensor.heightCorrection);
-            Config.wxsensor.temperatureCorrection   = getParamFloatSafe("wxsensor.temperatureCorrection", Config.wxsensor.temperatureCorrection);
-        }
+        Config.wxsensor.heightCorrection            = getParamIntSafe("wxsensor.heightCorrection", Config.wxsensor.heightCorrection);
+        Config.wxsensor.temperatureCorrection       = getParamFloatSafe("wxsensor.temperatureCorrection", Config.wxsensor.temperatureCorrection);
+        Config.wxsensor.callsign                    = getParamStringSafe("wxsensor.callsign", Config.wxsensor.callsign);
+        Config.wxsensor.overlay                     = getParamStringSafe("wxsensor.overlay", Config.wxsensor.overlay);
+        Config.wxsensor.symbol                      = getParamStringSafe("wxsensor.symbol", Config.wxsensor.symbol);
+        Config.wxsensor.latitude                    = getParamFloatSafe("wxsensor.latitude", Config.wxsensor.latitude);
+        Config.wxsensor.longitude                   = getParamFloatSafe("wxsensor.longitude", Config.wxsensor.longitude);
+        Config.wxsensor.sendViaAPRSIS               = request->hasParam("wxsensor.sendViaAPRSIS", true);
+        Config.wxsensor.sendViaRF                   = request->hasParam("wxsensor.sendViaRF", true);
+        Config.wxsensor.wxFreq                      = getParamIntSafe("wxsensor.wxFreq", Config.wxsensor.wxFreq);
 
 
         Config.wunderground.active                  = request->hasParam("wunderground.active", true);

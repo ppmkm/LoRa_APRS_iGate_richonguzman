@@ -125,6 +125,16 @@ bool Configuration::writeFile() {
         data["wxsensor"]["active"]                  = wxsensor.active;
         data["wxsensor"]["heightCorrection"]        = wxsensor.heightCorrection;
         data["wxsensor"]["temperatureCorrection"]   = wxsensor.temperatureCorrection;
+        wxsensor.callsign.trim();
+        wxsensor.callsign.toUpperCase();
+        data["wxsensor"]["callsign"]                = wxsensor.callsign;
+        data["wxsensor"]["overlay"]                 = wxsensor.overlay;
+        data["wxsensor"]["symbol"]                  = wxsensor.symbol;
+        data["wxsensor"]["latitude"]                = wxsensor.latitude;
+        data["wxsensor"]["longitude"]               = wxsensor.longitude;
+        data["wxsensor"]["sendViaAPRSIS"]           = wxsensor.sendViaAPRSIS;
+        data["wxsensor"]["sendViaRF"]               = wxsensor.sendViaRF;
+        data["wxsensor"]["wxFreq"]                  = wxsensor.wxFreq;
 
         data["syslog"]["active"]                    = syslog.active;
         data["syslog"]["server"]                    = syslog.server;
@@ -334,10 +344,26 @@ bool Configuration::readFile() {
 
         if (!data["wxsensor"].containsKey("active") ||
             !data["wxsensor"].containsKey("heightCorrection") ||
-            !data["wxsensor"].containsKey("temperatureCorrection")) needsRewrite = true;
+            !data["wxsensor"].containsKey("temperatureCorrection") ||
+            !data["wxsensor"].containsKey("callsign") ||
+            !data["wxsensor"].containsKey("overlay") ||
+            !data["wxsensor"].containsKey("symbol") ||
+            !data["wxsensor"].containsKey("latitude") ||
+            !data["wxsensor"].containsKey("longitude") ||
+            !data["wxsensor"].containsKey("sendViaAPRSIS") ||
+            !data["wxsensor"].containsKey("sendViaRF") ||
+            !data["wxsensor"].containsKey("wxFreq")) needsRewrite = true;
         wxsensor.active                 = data["wxsensor"]["active"] | false;
         wxsensor.heightCorrection       = data["wxsensor"]["heightCorrection"] | 0;
         wxsensor.temperatureCorrection  = data["wxsensor"]["temperatureCorrection"] | 0.0;
+        wxsensor.callsign               = data["wxsensor"]["callsign"] | "";
+        wxsensor.overlay                = data["wxsensor"]["overlay"] | "/";
+        wxsensor.symbol                 = data["wxsensor"]["symbol"] | "_";
+        wxsensor.latitude               = data["wxsensor"]["latitude"] | 0.0;
+        wxsensor.longitude              = data["wxsensor"]["longitude"] | 0.0;
+        wxsensor.sendViaAPRSIS          = data["wxsensor"]["sendViaAPRSIS"] | true;
+        wxsensor.sendViaRF              = data["wxsensor"]["sendViaRF"] | false;
+        wxsensor.wxFreq                 = data["wxsensor"]["wxFreq"] | 0;
 
 
         if (!data["wunderground"].containsKey("active") ||
@@ -522,6 +548,14 @@ void Configuration::setDefaultValues() {
     wxsensor.active                 = false;
     wxsensor.heightCorrection       = 0;
     wxsensor.temperatureCorrection  = 0.0;
+    wxsensor.callsign               = "";
+    wxsensor.overlay                = "/";
+    wxsensor.symbol                 = "_";
+    wxsensor.latitude               = 0.0;
+    wxsensor.longitude              = 0.0;
+    wxsensor.sendViaAPRSIS          = true;
+    wxsensor.sendViaRF              = false;
+    wxsensor.wxFreq                 = 0;
 
     syslog.active                   = false;
     syslog.server                   = "lora.link9.net";

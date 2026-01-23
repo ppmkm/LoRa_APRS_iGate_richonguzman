@@ -192,9 +192,21 @@ function loadSettings(settings) {
     document.getElementById("wxsensor.active").checked                  = settings.wxsensor.active;
     document.getElementById("wxsensor.heightCorrection").value          = settings.wxsensor.heightCorrection;
     document.getElementById("wxsensor.temperatureCorrection").value     = settings.wxsensor.temperatureCorrection.toFixed(1);
+    document.getElementById("wxsensor.callsign").value                  = settings.wxsensor.callsign || "";
+    document.getElementById("wxsensor.overlay").value                   = settings.wxsensor.overlay || "/";
+    document.getElementById("wxsensor.symbol").value                    = settings.wxsensor.symbol || "_";
+    document.getElementById("wxsensor.wxSymbol").value                  = (settings.wxsensor.overlay || "/") + (settings.wxsensor.symbol || "_");
+    document.getElementById("wxsensor.latitude").value                  = (settings.wxsensor.latitude || 0).toFixed(3);
+    document.getElementById("wxsensor.longitude").value                 = (settings.wxsensor.longitude || 0).toFixed(3);
+    document.getElementById("wxsensor.sendViaAPRSIS").checked           = settings.wxsensor.sendViaAPRSIS !== false;
+    document.getElementById("wxsensor.sendViaRF").checked               = settings.wxsensor.sendViaRF || false;
+    document.getElementById("wxsensor.wxFreq").value                    = settings.wxsensor.wxFreq || 0;
     TelemetryCheckbox.checked           = settings.wxsensor.active;
     TelemetryHeightCorrection.disabled  = !TelemetryCheckbox.checked;
     TelemetryTempCorrection.disabled    = !TelemetryCheckbox.checked;
+    WxRFCheckbox.checked                = settings.wxsensor.sendViaRF || false;
+    WxFrequency.disabled                = !WxRFCheckbox.checked;
+    updateWxImage();
     
     // WUNDERGROUND
     if (settings.wunderground) {
@@ -401,6 +413,43 @@ const TelemetryTempCorrection           = document.querySelector('input[name="wx
 TelemetryCheckbox.addEventListener("change", function () {
     TelemetryHeightCorrection.disabled  = !this.checked;
     TelemetryTempCorrection.disabled    = !this.checked;
+});
+
+// WX RF Switches
+const WxRFCheckbox                      = document.querySelector('input[name="wxsensor.sendViaRF"]');
+const WxFrequency                       = document.querySelector('select[name="wxsensor.wxFreq"]');
+WxRFCheckbox.addEventListener("change", function() {
+    WxFrequency.disabled = !this.checked;
+});
+
+// WX Symbol handling
+function updateWxImage() {
+    const value = document.getElementById("wxsensor.wxSymbol").value;
+    const image = document.getElementById("wxSymbolImage");
+
+    // Update hidden fields
+    if (value && value.length >= 2) {
+        document.getElementById("wxsensor.overlay").value = value[0];
+        document.getElementById("wxsensor.symbol").value = value[1];
+    }
+
+    switch (value) {
+        case "/_":
+            image.src = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADAAAAAwCAYAAABXAvmHAAAACXBIWXMAAAsTAAALEwEAmpwYAAADlklEQVR4nO2ZW4hNURjHf2YYl3EZtyRjyIMHPCh5cMnlwQMpl3ggkTwQJC+EIi8eSLlELimXSMaDPLgkD4aUu3JLueSWa8Zl/Pr2OjXN2Wfvvc4+e4Z5+NfTnr3Wt/7/b6+91trrwH/8h4gDpgNrgTPAXeATUA98BV4Dz4A7wGlgHdAjSvJxwCrgEfA9D70ALgGrge5hks8BjgbI/Q34UmSPhLnNfgdKHO57BnQDdgBNEc1fjdLmjP6Y/4iAeB9gB/AGaIiA/C+gHXAYeBsB+d/AYOAQcC8C8uUY/TFRkP8TqI0J+9Y+wUCvNpJngBT2nrJN4BlwPi7kgUrgWczINwM+xcXsIEyHvmLATT2PRxZGy20ySawF7ukZ90gS2OgDWOUzwBJ9Nm0SJFK0WlEQ8tlAJ+/+5QgDPgaC6dkWeClC8qnADeBDFOT/BMYCq4EmH/JlOjaIQDd1pjYu5IcB53zIp+nYIAJnNYm7cSE/C6j0IV9AqgDEgXwxcMqH/CAdvRQ38jP1O8ELQ7VNLMhnAQd8yKfr2CYC8qPV6cPxIQ8MBbb6vP0HOraLgHw/YGMACy41HMSFPLA4gAVnA04hH3gYF/LAmgAWrAw4pULgVlzIA5sCWHBc4FSKBW7GhTywPYAFhwWcWiVwNS7kgd0BLDg84NS4SuB8XMgDBwNYcEjAqQOB03EmD5wJYMHugFNLBE7GmTxwLYAFmwWcOkhgf5zJA3cDWLCTwKmJAfvHmjxwP4AFKwROjRY4EWfywJMAFqwTONVb4HicyQMvA1hwgMCpCQJ740weeB/AgqMFTnUSOBpn8sC3ABZ8J3Cqq8CROJMHmgNY8IfAqfYChwPIPx9n8kC7ABb8InCqrcChOJMHigNY8KvAqRYC+wPIvxBn8kBpAAv+FDhVJLAnzuSB8gAW/C5wqpHAngDyn8eZPFAZwIJNAqeKBPb4kH8xzuSBXgEs+E3gVIHArgDyb8eZPNAvgAW/CJzKE9jlQ/79OJMH+gew4CeBU7kCO33Iv5dI8gACBz2IgLgHTuULbPcht9R3IA4/e2Jjwt+iDpk4kweGBLBgb4FTOQJbA8gvi5pPHHCYN5j3cO8Wkp/BwQP9wAvgEvDOdRj1Bj6EeTu4UWBTHuxJVPBL1Pf7L5JJfgtwKM/hxS9RZ91dCel2Mv/bM/D/wINv3bRPYNTH64JoAeB6foDkif+vbecAAAAASUVORK5CYII=";
+            break;
+        case "\\W":
+            image.src = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADAAAAAwCAYAAABXAvmHAAAACXBIWXMAAAsTAAALEwEAmpwYAAAEWElEQVR4nO2ZaYhVVRzAf+OMs7iMu2nuK6aCWVr2QcvKyg9tYIst9KWyKCg+JBFE9SGKvkRQEFQfIqIPLRTZIrZYlG22l5WVmbnv+zbOnzNc5t577z3nnnvvzDjwh8u8d87y/5/z33p/aNeuXbt27dq1a5cT0A44H1gB/AJ8D+wBWoAjwGHgEPATsBlYDzwLLAIGtwV5M2vWqHt7gCNthUxb0K8TuJIa3At0by1yLYMaHqsB3wM9WotcywC1egP4pjXJtQxKgFWA1NjnNsYx8mYDUgOXWrMAWQPPh7yJdqvBG0E+ZQ+sCCDQKdcjYHYg8v2AJwJ4BnwN1M6Fx4HVAbI0mHQy8ANqm+X/LRyB70LW+vkQMN5v4FJgbqhwMQBYHRLASOBtoM6HwMOEiFIPBZ7yETjdpEPfOJMH7gwQJdVH+CInnONBHugF3O9DoLdJhwFxJg/s8RFIHTI5jL4G6shbnMkD7/sINOskENKhCxzyIb8rzuSBL30EjiKfqk8CpJN6/mscyANbfAT2IhO5AsBMgjAVQH3SvLQOCEfgdx+BI8h7ihOAKcCQUCEQ9wL7QqZQl1AOH/Ih/y3O5IFPfQTqkXfdJwATCdFqXxPyIf9lnMkD3/gI/Ip86j4M6EkI1nqd4EP+wziTB370EahHXnU/HPB4MBf4xIf8G3EmD/zoI3AQeNT9WNDjQS/gDR/y78SZPPCTD4HNyJueLQMqCMFSXyN8yL8eZ/JAow+Br5EPhawYUEoIFqNWPPIh/2qcyQNNPgKfIh8KuR+o7CAMixFZ9tOH/BtxJg80+wjcgcz1bBpQagimIjUz+JBfHWfyQIuPwGfI3M6OASVYeDpwJ6r0jw/5l+NMHvgv7ANBk/8FRiIPh3i0bE9D4JUAmWNNHvgvXOB1wGDkgRDXlHUIPBdAPuAKv0FxJg/8Hy5wOyCBR0NcQvQh8HwA+YAbvNY4kwdKwgQOBR4LcfHQm8CTAeRXxZk8UBom8DTyYIBTijsEHg8g/3ScyQNVYQKrCeFaXBfgMB/yL8WZPNC1RgK/BTilqEPgYR/y0f+YOJMH6sIEPkU+HHBKYYfAOT7klyaUPGDAFQ+jM8gDdVnIHwo4pf8C5wcgt68HmJI38kBDosDWwNP5ugdcH8A+6AbGBfNNHjgeJrAZede9HqgkAON9yL+TJ/JAzzCBxcAqA07J7RBwf6JyP/IvhqiHY00e6Bsm8ByyVLJiQKkBJ7oEyL8VE/JA/zCBV5F33asCHgFGGYJRPuRfyTN5oH+YwCuAu4E9RmBIwIn9fci/FAfyFvz8cSIP5AgTeM0ITDeEg33IvxIn8gCDwgTeNASjDWEPH/Kvx4k8wJAwgTeNwPCAN9Gg1yPPYUL+tTiRBxgaJvCWIRhqCLv5kH8pTuRJVP3WIfNwgzfMEHTxIf9C3MgDDA8TeBt5x10J8iZkd8dJQJc4kQcYESbwHnLHHXGLN9U3t5kAB45vT0gDAAAAAElFTkSuQmCC";
+            break;
+        case "/W":
+            image.src = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADAAAAAwCAYAAABXAvmHAAAACXBIWXMAAAsTAAALEwEAmpwYAAADfklEQVR4nO2ZW4hNURjHf8YwxmVcJ+Q2HjwgeSCX8eDygERyeUAieSBIXghFXjxIuUQiJZeUeCAPLsmDIeWuXJJLLsklt9wy+vU66zRz9tl77X32GebhX097+tZa3/+7rb32WtCuXbt27dq1a9cuZ6ADMANYBZwCbgGfgAbgM/ASuA+cBjYAveJK3gxYCDwEfmehl8A5YDHQPUzyWcDhgOK/gS8l9liY2+xnoMzjvmdAV2Ab0BTT/FUpbYzpl3lLCEj3BrYDr4GmGMj/AjoBh4A3MZD/DfQDDgL3YiBfjjEfE4X4X4DamLFvrROMDGojfQZIs+8p2wQeAqdTRR5oAD6ImXwz4GNazA7CdugvBtzU/XRkYWHZTWaJdUA7PeMdSQKrAwBrvAeY6c+mTIJkilarSgRZ2xfoki6bEQLsC4KZ2W4MFoSB+sFouc0miXXAbT3THomQ2OQDmO0zYJ4+G7cJkijVauW5IM7aRkgne1cvR5jwKRBOz7bAS7Eljwd1wHXgfRzi/wOYAiwGmnzIl+nYJgLyE9TpY/EmD/QF1vqQL9GxXQTkJ6vTh+NNHugNrPYhX0KqAPQl3+LLgWM+5IfpmC4C8qPV6UPJlgcGA5t93v4jHdtHQH6MGn0o2fKQQJ82+0j2nY4dIiA/UZ3ek2x5YGBaBx9l3YDTqBR4kCx5YGGa/LfsGzBCx04RkB8GrA9g4WmBUysE7iRLHlio7n2Xfcv6ASN17BQB+cHA2gC2dBY4tVTgVLLkgUU+5FN0bBcB+YHA6gC2dBE4tUTgRLLkgSU+5NN1bBMB+X7AygC2dBU4tVjgaLLkgaU+5DN0bB0B+T7A8gC2dBc4tVDgSLLkgWU+5LN1bBUB+V7A0gC29BI4tUDgcLLkgeU+5PN0bBkB+Z7AkgC29BU4NV/gcLLkgRU+5At0bBEB+e7A4gC29Bc4NU/gcLLkgZU+5It1bB4B+a7AogC2DBA4NVfgYLLkgVU+5Et1bBYB+S7AggC2DBI4NUfgQLLkgdU+5Mt1bBoB+c7AvAC2DBY4NVvgQLLkgTU+5Ct0bBIB+U7A3AC2DBU4NUvgQLLkgbU+5Kt0bBwB+Y7AnAC2DAPqBE7NFNifLHlgnQ/5Gh0bRUC+AzA7gC3DAzpUr2OjCMhnA2sC2DLS5/qhRsfGEZDPAtYEsGW0j0O1OjaOgHwmsMqHLcMDrq0fAHIGZYyZ49uPAAAAAElFTkSuQmCC";
+            break;
+        default:
+            image.src = "";
+    }
+}
+
+document.getElementById("wxsensor.wxSymbol").addEventListener("change", function() {
+    updateWxImage();
 });
 
 // Wunderground Switches
