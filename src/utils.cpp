@@ -183,8 +183,38 @@ namespace Utils {
 
             if (Config.wxsensor.active) {
                 String sensorData = (wxModuleType == 0) ? ".../...g...t..." : WX_Utils::readDataSensor();
-                beaconPacket            += sensorData;
-                secondaryBeaconPacket   += sensorData;
+
+                // Check if WX-specific settings are configured
+                bool hasWxCallsign = Config.wxsensor.callsign.length() > 0;
+                bool hasWxPosition = Config.wxsensor.latitude != 0.0 || Config.wxsensor.longitude != 0.0;
+
+                if (hasWxCallsign || hasWxPosition) {
+                    // Use WX-specific settings for weather report
+                    String wxCallsign = hasWxCallsign ? Config.wxsensor.callsign : Config.callsign;
+                    double wxLat = hasWxPosition ? Config.wxsensor.latitude : Config.beacon.latitude;
+                    double wxLon = hasWxPosition ? Config.wxsensor.longitude : Config.beacon.longitude;
+                    String wxOverlay = Config.wxsensor.overlay.length() > 0 ? Config.wxsensor.overlay : "/";
+                    String wxSymbol = Config.wxsensor.symbol.length() > 0 ? Config.wxsensor.symbol : "_";
+
+                    String wxBasePacket = APRSPacketLib::generateBasePacket(wxCallsign, "APLRG1", Config.beacon.path);
+                    String wxEncodedGPS = APRSPacketLib::encodeGPSIntoBase91(wxLat, wxLon, 0, 0, wxSymbol, false, 0, true, 0);
+
+                    beaconPacket = wxBasePacket;
+                    beaconPacket += ",qAC:!";
+                    beaconPacket += wxOverlay;
+                    beaconPacket += wxEncodedGPS;
+                    beaconPacket += sensorData;
+
+                    secondaryBeaconPacket = wxBasePacket;
+                    secondaryBeaconPacket += ":=";
+                    secondaryBeaconPacket += wxOverlay;
+                    secondaryBeaconPacket += wxEncodedGPS;
+                    secondaryBeaconPacket += sensorData;
+                } else {
+                    // Use main station settings (original behavior)
+                    beaconPacket            += sensorData;
+                    secondaryBeaconPacket   += sensorData;
+                }
             }
             beaconPacket            += Config.beacon.comment;
             secondaryBeaconPacket   += Config.beacon.comment;

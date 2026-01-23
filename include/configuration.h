@@ -113,6 +113,11 @@ public:
     bool    active;
     int     heightCorrection;
     float   temperatureCorrection;
+    String  callsign;
+    double  latitude;
+    double  longitude;
+    String  overlay;
+    String  symbol;
 };
 
 class SYSLOG {

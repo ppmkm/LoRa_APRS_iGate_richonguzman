@@ -123,6 +123,11 @@ bool Configuration::writeFile() {
         data["wxsensor"]["active"]                  = wxsensor.active;
         data["wxsensor"]["heightCorrection"]        = wxsensor.heightCorrection;
         data["wxsensor"]["temperatureCorrection"]   = wxsensor.temperatureCorrection;
+        data["wxsensor"]["callsign"]                = wxsensor.callsign;
+        data["wxsensor"]["latitude"]                = wxsensor.latitude;
+        data["wxsensor"]["longitude"]               = wxsensor.longitude;
+        data["wxsensor"]["overlay"]                 = wxsensor.overlay;
+        data["wxsensor"]["symbol"]                  = wxsensor.symbol;
 
         data["syslog"]["active"]                    = syslog.active;
         data["syslog"]["server"]                    = syslog.server;
@@ -323,10 +328,20 @@ bool Configuration::readFile() {
 
         if (!data["wxsensor"].containsKey("active") ||
             !data["wxsensor"].containsKey("heightCorrection") ||
-            !data["wxsensor"].containsKey("temperatureCorrection")) needsRewrite = true;
+            !data["wxsensor"].containsKey("temperatureCorrection") ||
+            !data["wxsensor"].containsKey("callsign") ||
+            !data["wxsensor"].containsKey("latitude") ||
+            !data["wxsensor"].containsKey("longitude") ||
+            !data["wxsensor"].containsKey("overlay") ||
+            !data["wxsensor"].containsKey("symbol")) needsRewrite = true;
         wxsensor.active                 = data["wxsensor"]["active"] | false;
         wxsensor.heightCorrection       = data["wxsensor"]["heightCorrection"] | 0;
         wxsensor.temperatureCorrection  = data["wxsensor"]["temperatureCorrection"] | 0.0;
+        wxsensor.callsign               = data["wxsensor"]["callsign"] | "";
+        wxsensor.latitude               = data["wxsensor"]["latitude"] | 0.0;
+        wxsensor.longitude              = data["wxsensor"]["longitude"] | 0.0;
+        wxsensor.overlay                = data["wxsensor"]["overlay"] | "/";
+        wxsensor.symbol                 = data["wxsensor"]["symbol"] | "_";
 
         if (!data["syslog"].containsKey("active") ||
             !data["syslog"].containsKey("server") ||
@@ -498,6 +513,11 @@ void Configuration::setDefaultValues() {
     wxsensor.active                 = false;
     wxsensor.heightCorrection       = 0;
     wxsensor.temperatureCorrection  = 0.0;
+    wxsensor.callsign               = "";
+    wxsensor.latitude               = 0.0;
+    wxsensor.longitude              = 0.0;
+    wxsensor.overlay                = "/";
+    wxsensor.symbol                 = "_";
 
     syslog.active                   = false;
     syslog.server                   = "lora.link9.net";

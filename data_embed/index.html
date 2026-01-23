@@ -1375,6 +1375,81 @@
                                         </div>
                                     </div>
                                 </div>
+                                <div class="row mt-3">
+                                    <div class="col-12">
+                                        <small class="text-muted">Optional: Use separate callsign, position and symbol for WX reports. Leave empty to use main station settings.</small>
+                                    </div>
+                                </div>
+                                <div class="row mt-2">
+                                    <div class="col-4">
+                                        <label for="wxsensor.callsign" class="form-label"
+                                            >WX Callsign</label
+                                        >
+                                        <input
+                                            type="text"
+                                            name="wxsensor.callsign"
+                                            id="wxsensor.callsign"
+                                            placeholder="Leave empty for main"
+                                            class="form-control"
+                                        />
+                                    </div>
+                                    <div class="col-4">
+                                        <label for="wxsensor.latitude" class="form-label"
+                                            >WX Latitude</label
+                                        >
+                                        <input
+                                            type="text"
+                                            name="wxsensor.latitude"
+                                            id="wxsensor.latitude"
+                                            placeholder="0.0"
+                                            class="form-control"
+                                        />
+                                    </div>
+                                    <div class="col-4">
+                                        <label for="wxsensor.longitude" class="form-label"
+                                            >WX Longitude</label
+                                        >
+                                        <input
+                                            type="text"
+                                            name="wxsensor.longitude"
+                                            id="wxsensor.longitude"
+                                            placeholder="0.0"
+                                            class="form-control"
+                                        />
+                                    </div>
+                                </div>
+                                <div class="row mt-2">
+                                    <div class="col-3">
+                                        <label for="wxsensor.overlay" class="form-label"
+                                            >WX Overlay</label
+                                        >
+                                        <input
+                                            type="text"
+                                            name="wxsensor.overlay"
+                                            id="wxsensor.overlay"
+                                            placeholder="/"
+                                            class="form-control"
+                                            maxlength="1"
+                                        />
+                                    </div>
+                                    <div class="col-3">
+                                        <label for="wxsensor.symbol" class="form-label"
+                                            >WX Symbol</label
+                                        >
+                                        <input
+                                            type="text"
+                                            name="wxsensor.symbol"
+                                            id="wxsensor.symbol"
+                                            placeholder="_"
+                                            class="form-control"
+                                            maxlength="1"
+                                        />
+                                    </div>
+                                    <div class="col-6">
+                                        <label class="form-label">&nbsp;</label>
+                                        <div class="form-text">Default: "/" overlay + "_" symbol = WX Station</div>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                         <hr>
